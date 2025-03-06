@@ -4,7 +4,9 @@ from pathlib import Path
 from setuptools import setup, find_packages
 
 AUTOAWQ_VERSION = "0.2.8"
-TORCH_VERSION = str(os.getenv("TORCH_VERSION", None) or torch.__version__).split('+', maxsplit=1)[0]
+TORCH_VERSION = str(os.getenv("TORCH_VERSION", None) or torch.__version__).split(
+    "+", maxsplit=1
+)[0]
 
 common_setup_kwargs = {
     "version": AUTOAWQ_VERSION,
@@ -36,7 +38,7 @@ common_setup_kwargs = {
 requirements = [
     f"torch>={TORCH_VERSION}",
     "triton",
-    "transformers>=4.45.0,<=4.47.1",
+    "transformers",
     "tokenizers>=0.12.1",
     "typing_extensions>=4.8.0",
     "accelerate",
