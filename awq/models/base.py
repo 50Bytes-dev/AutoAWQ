@@ -73,6 +73,7 @@ TRANSFORMERS_AUTO_MAPPING_DICT = {
     "llava": "AutoModelForVision2Seq",
     "qwen2": "AutoModelForCausalLM",
     "qwen2_vl": "AutoModelForVision2Seq",
+    "qwen2_5_vl": "AutoModelForVision2Seq",
     "gemma": "AutoModelForCausalLM",
     "gemma2": "AutoModelForCausalLM",
     "stablelm": "AutoModelForCausalLM",
@@ -84,9 +85,8 @@ TRANSFORMERS_AUTO_MAPPING_DICT = {
     "deepseek_v2": "AutoModelForCausalLM",
     "deepseek_v3": "AutoModelForCausalLM",
     "minicpm": "AutoModelForCausalLM",
-    "minicpm3":"AutoModelForCausalLM",
+    "minicpm3": "AutoModelForCausalLM",
     "internlm2": "AutoModelForCausalLM",
-    "qwen2_vl": "AutoModelForVision2Seq",
 }
 
 
@@ -186,12 +186,12 @@ class BaseAWQForCausalLM(nn.Module):
                 " Adjust this parameter to increase or decrease memory usage for these computations."
                 " Default is 1GB (1024 * 1024 * 1024)."
             ),
-        ] = 1024
-        * 1024
-        * 1024,
+        ] = 1024 * 1024 * 1024,
         quantizer_cls: Annotated[
             AwqQuantizer,
-            Doc("If you want to customize the quantization class, you can use AwqQuantizer as a base class.")
+            Doc(
+                "If you want to customize the quantization class, you can use AwqQuantizer as a base class."
+            ),
         ] = AwqQuantizer,
         **kwargs,
     ):
@@ -345,12 +345,10 @@ class BaseAWQForCausalLM(nn.Module):
             Doc("Used for configure download model"),
         ] = None,
         low_cpu_mem_usage: Annotated[
-            bool,
-            Doc("Use low_cpu_mem_usage when loading from transformers.")
+            bool, Doc("Use low_cpu_mem_usage when loading from transformers.")
         ] = True,
         use_cache: Annotated[
-            bool,
-            Doc("Use use_cache argument in transformers")
+            bool, Doc("Use use_cache argument in transformers")
         ] = False,
         **model_init_kwargs: Annotated[
             Dict,
@@ -379,7 +377,10 @@ class BaseAWQForCausalLM(nn.Module):
 
         if model_init_kwargs.get("low_cpu_mem_usage") is None:
             model_init_kwargs["low_cpu_mem_usage"] = low_cpu_mem_usage
-        if model_init_kwargs.get("use_cache") is None and target_cls_name != "AutoModelForVision2Seq":
+        if (
+            model_init_kwargs.get("use_cache") is None
+            and target_cls_name != "AutoModelForVision2Seq"
+        ):
             model_init_kwargs["use_cache"] = use_cache
 
         # If not quantized, must load with AutoModelForCausalLM
@@ -445,7 +446,8 @@ class BaseAWQForCausalLM(nn.Module):
             bool, Doc("Whether to map the weights to ExLlamaV2 kernels.")
         ] = False,
         use_ipex: Annotated[
-            bool, Doc("Whether to map the weights to ipex kernels for CPU and XPU device.")
+            bool,
+            Doc("Whether to map the weights to ipex kernels for CPU and XPU device."),
         ] = False,
         device_map: Annotated[
             Union[str, Dict],
@@ -535,7 +537,10 @@ class BaseAWQForCausalLM(nn.Module):
         awq_ext, msg = try_import("awq_ext")
         if fuse_layers:
             if best_device in ["mps", "cuda:0"] and awq_ext is None:
-                warnings.warn("Skipping fusing modules because AWQ extension is not installed." + msg)
+                warnings.warn(
+                    "Skipping fusing modules because AWQ extension is not installed."
+                    + msg
+                )
             else:
                 self.fuse_layers(model)
 
@@ -669,7 +674,6 @@ class BaseAWQForCausalLM(nn.Module):
                     q_linear_module = WQLinear_GEMV
                 elif version == "gemv_fast":
                     q_linear_module = WQLinear_GEMVFast
-
 
                 q_linear = q_linear_module.from_linear(
                     module, quant_config.w_bit, quant_config.q_group_size, True
